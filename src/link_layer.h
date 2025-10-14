@@ -37,7 +37,7 @@ typedef struct
 #define DISC 0x0B
 
 enum State{
-    FLAG_I, A_M, C_M, BCC, FLAG_F
+    FLAG_I, A, C, BCC, FLAG_F
 };
 // Open a connection using the "port" parameters defined in struct linkLayer.
 // Return 0 on success or -1 on error.

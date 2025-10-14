@@ -47,7 +47,7 @@ int llopen(LinkLayer connectionParameters)
         exit(1);
     }
 
-    if (connectionParameters.role == "tx")
+    if (connectionParameters.role == LlTx)
     {
         buf[0] = FLAG;
         buf[1] = A_T;
@@ -148,12 +148,13 @@ int llopen(LinkLayer connectionParameters)
             }
         }
     }
-    else if (connectionParameters.role == "rx")
+    else if (connectionParameters.role == LlRx)
     {
         int nBytesBuf = 0;
 
         while (STOP == FALSE)
         {
+            
             unsigned char byte;
             int bytes = readByteSerialPort(&byte);
             nBytesBuf += bytes;

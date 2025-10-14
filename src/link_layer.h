@@ -27,6 +27,17 @@ typedef struct
 #define FALSE 0
 #define TRUE 1
 
+#define FLAG 0x7E
+
+#define A_T 0x03
+#define A_R 0x01
+
+#define SET 0x03
+#define UA 0x07
+
+enum State{
+    FLAG_I, A_M, C_M, BCC, FLAG_F
+};
 // Open a connection using the "port" parameters defined in struct linkLayer.
 // Return 0 on success or -1 on error.
 int llopen(LinkLayer connectionParameters);

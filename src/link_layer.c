@@ -158,6 +158,7 @@ int llopen(LinkLayer connectionParameters)
             unsigned char byte;
             int bytes = readByteSerialPort(&byte);
             nBytesBuf += bytes;
+            if(bytes == 1){
             switch (state)
             {
             case FLAG_I:
@@ -223,6 +224,7 @@ int llopen(LinkLayer connectionParameters)
                 {
                     printf("byte = 0x%02X\n", byte);
                     buf[state] = FLAG;
+                    writeBytesSerialPort(buf, bufSize);
                     STOP = TRUE;
                 }
                 else
@@ -234,6 +236,7 @@ int llopen(LinkLayer connectionParameters)
             default:
                 break;
             }
+        }
         }
     }
 

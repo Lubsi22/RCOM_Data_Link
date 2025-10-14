@@ -87,7 +87,7 @@ int llopen(LinkLayer connectionParameters)
                 }
                 case A_M:
                 {
-                    if (byte == 0x01)
+                    if (byte == A_R)
                     {
                         printf("byte = 0x%02X\n", byte);
                         buf[state] = A_R;
@@ -101,7 +101,7 @@ int llopen(LinkLayer connectionParameters)
                 }
                 case C_M:
                 {
-                    if (byte == 0x07)
+                    if (byte == UA)
                     {
                         printf("byte = 0x%02X\n", byte);
                         buf[state] = UA;
@@ -271,8 +271,308 @@ int llread(unsigned char *packet)
 ////////////////////////////////////////////////
 // LLCLOSE
 ////////////////////////////////////////////////
-int llclose()
-{
+int llclose(LinkLayer connectionParameters)
+{   
+    int bufSize = 5;
+    unsigned char buf[bufSize];
+    int STOP = FALSE;
+    enum State state = FLAG_I;
+
+    struct sigaction act = {0};
+    act.sa_handler = &alarmHandler;
+    if (sigaction(SIGALRM, &act, NULL) == -1)
+    {
+        perror("sigaction");
+        exit(1);
+    }
+
+    if (connectionParameters.role == LlTx)
+    {
+        buf[0] = FLAG;
+        buf[1] = A_T;
+        buf[2] = DISC;
+        buf[3] = buf[1] ^ buf[2];
+        buf[4] = FLAG;
+        while (STOP == FALSE && alarmCount < connectionParameters.timeout)
+        {
+            if (alarmEnabled == FALSE)
+            {
+                int bytes = writeBytesSerialPort(buf, bufSize);
+                printf("%d bytes written to serial port\n", bytes);
+
+                alarm(3); // Set alarm to be triggered in 3s
+                alarmEnabled = TRUE;
+            }
+
+            unsigned char byte;
+
+            while (readByteSerialPort(&byte) == 1 && STOP == FALSE)
+            {
+                switch (state)
+                {
+                case FLAG_I:
+                {
+                    if (byte == FLAG)
+                    {
+                        printf("byte = 0x%02X\n", byte);
+                        buf[state] = FLAG;
+                        state++;
+                    }
+                    else
+                    {
+                        state = 0;
+                    }
+                    break;
+                }
+                case A_M:
+                {
+                    if (byte == A_R)
+                    {
+                        printf("byte = 0x%02X\n", byte);
+                        buf[state] = A_T;
+                        state++;
+                    }
+                    else
+                    {
+                        state = 0;
+                    }
+                    break;
+                }
+                case C_M:
+                {
+                    if (byte == DISC)
+                    {
+                        printf("byte = 0x%02X\n", byte);
+                        buf[state] = UA;
+                        state++;
+                    }
+                    else
+                    {
+                        state = 0;
+                    }
+                    break;
+                }
+                case BCC:
+                {
+                    if (byte == buf[1] ^ buf[2])
+                    {
+                        printf("byte = 0x%02X\n", byte);
+                        buf[state] = buf[1] ^ buf[2];
+                        state++;
+                    }
+                    else
+                    {
+                        state = 0;
+                    }
+                    break;
+                }
+                case FLAG_F:
+                {
+                    if (byte == FLAG)
+                    {
+                        printf("byte = 0x%02X\n", byte);
+                        buf[state] = FLAG;
+                        STOP = TRUE;
+                        alarm(0);
+                    }
+                    else
+                    {
+                        state = 0;
+                    }
+                    break;
+                }
+                default:
+                    break;
+                }
+            }
+        }
+    }
+    else if (connectionParameters.role == LlRx)
+    {
+        int nBytesBuf = 0;
+
+        while (STOP == FALSE)
+        {
+            
+            unsigned char byte;
+            int bytes = readByteSerialPort(&byte);
+            nBytesBuf += bytes;
+            if(bytes == 1){
+            switch (state)
+            {
+            case FLAG_I:
+            {
+                if (byte == FLAG)
+                {
+                    printf("byte = 0x%02X\n", byte);
+                    buf[state] = FLAG;
+                    state++;
+                }
+                else
+                {
+                    state = 0;
+                }
+
+                break;
+            }
+            case A_M:
+            {
+                if (byte == A_T)
+                {
+                    printf("byte = 0x%02X\n", byte);
+                    buf[state] = A_R;
+                    state++;
+                }
+                else
+                {
+                    state = 0;
+                }
+                break;
+            }
+            case C_M:
+            {
+                if (byte == DISC)
+                {
+                    printf("byte = 0x%02X\n", byte);
+                    buf[state] = DISC;
+                    state++;
+                }
+                else
+                {
+                    state = 0;
+                }
+                break;
+            }
+            case BCC:
+            {
+                if (byte == A_T ^ DISC)
+                {
+                    printf("byte = 0x%02X\n", byte);
+                    buf[state] = A_R ^ DISC;
+                    state++;
+                }
+                else
+                {
+                    state = 0;
+                }
+                break;
+            }
+            case FLAG_F:
+            {
+                if (byte == FLAG)
+                {
+                    printf("byte = 0x%02X\n", byte);
+                    buf[state] = FLAG;
+                    writeBytesSerialPort(buf, bufSize);
+                    STOP = TRUE;
+                }
+                else
+                {
+                    state = 0;
+                }
+                break;
+            }
+            default:
+                break;
+            }
+        }
+        }
+
+        STOP = FALSE;
+        nBytesBuf = 0;
+        state = FLAG_I;
+
+        while (STOP == FALSE)
+        {
+            
+            unsigned char byte;
+            int bytes = readByteSerialPort(&byte);
+            nBytesBuf += bytes;
+            if(bytes == 1){
+            switch (state)
+            {
+            case FLAG_I:
+            {
+                if (byte == FLAG)
+                {
+                    printf("byte = 0x%02X\n", byte);
+                    buf[state] = FLAG;
+                    state++;
+                }
+                else
+                {
+                    state = 0;
+                }
+
+                break;
+            }
+            case A_M:
+            {
+                if (byte == A_T)
+                {
+                    printf("byte = 0x%02X\n", byte);
+                    buf[state] = A_R;
+                    state++;
+                }
+                else
+                {
+                    state = 0;
+                }
+                break;
+            }
+            case C_M:
+            {
+                if (byte == UA)
+                {
+                    printf("byte = 0x%02X\n", byte);
+                    buf[state] = UA;
+                    state++;
+                }
+                else
+                {
+                    state = 0;
+                }
+                break;
+            }
+            case BCC:
+            {
+                if (byte == A_T ^ UA)
+                {
+                    printf("byte = 0x%02X\n", byte);
+                    buf[state] = A_R ^ DISC;
+                    state++;
+                }
+                else
+                {
+                    state = 0;
+                }
+                break;
+            }
+            case FLAG_F:
+            {
+                if (byte == FLAG)
+                {
+                    printf("byte = 0x%02X\n", byte);
+                    buf[state] = FLAG;
+                    writeBytesSerialPort(buf, bufSize);
+                    STOP = TRUE;
+                }
+                else
+                {
+                    state = 0;
+                }
+                break;
+            }
+            default:
+                break;
+            }
+        }
+        }
+    }
+
+    
+
+
     if (closeSerialPort() < 0)
     {
         perror("closeSerialPort");

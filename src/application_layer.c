@@ -35,6 +35,6 @@ void applicationLayer(const char *serialPort, const char *role, int baudRate,
         llread(packet);
     }
 
-    llclose();
+    llclose(serialport);
     
     }

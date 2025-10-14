@@ -34,6 +34,7 @@ typedef struct
 
 #define SET 0x03
 #define UA 0x07
+#define DISC 0x0B
 
 enum State{
     FLAG_I, A_M, C_M, BCC, FLAG_F
@@ -52,6 +53,6 @@ int llread(unsigned char *packet);
 
 // Close previously opened connection and print transmission statistics in the console.
 // Return 0 on success or -1 on error.
-int llclose();
+int llclose(LinkLayer connectionParameters);
 
 #endif // _LINK_LAYER_H_

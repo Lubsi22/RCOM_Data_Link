@@ -54,7 +54,7 @@ int llopen(LinkLayer connectionParameters)
         buf[2] = SET;
         buf[3] = buf[1] ^ buf[2];
         buf[4] = FLAG;
-        while (STOP == FALSE && alarmCount < 5)
+        while (STOP == FALSE && alarmCount < connectionParameters.timeout)
         {
             if (alarmEnabled == FALSE)
             {

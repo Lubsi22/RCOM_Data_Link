@@ -308,7 +308,8 @@ int llwrite(const unsigned char *buf, int bufSize, LinkLayer connectionParameter
                 case FLAG_I:
                 {
                     if (byte == FLAG)
-                    {
+                    {   
+                        printf("Here\n");
                         printf("byte = 0x%02X\n", byte);
                         state = A;
                     }
@@ -355,6 +356,7 @@ int llwrite(const unsigned char *buf, int bufSize, LinkLayer connectionParameter
                     if (byte == FLAG)
                     {
                         printf("byte = 0x%02X\n", byte);
+                        printf("Message sent succesfully!!!\n");
                         STOP = TRUE;
                         alarm(0);
                     }
@@ -367,8 +369,6 @@ int llwrite(const unsigned char *buf, int bufSize, LinkLayer connectionParameter
                 }
 
     }
-
-    printf("Message sent succesfully!!!\n");
 
     return bytes;
 }
@@ -401,14 +401,13 @@ int llread(unsigned char *packet)
         }
         else {
             if (byte == FLAG) {
+                unsigned char buf[5] = {FLAG, A_R, 0xAA, A_R^0xAA, FLAG};
+                writeBytesSerialPort(buf, 5);
                 return idx;
             }
             packet[idx++] = byte;
         }
     }
-
-    unsigned char buf[5] = {FLAG, A_R, 0xAA, A_R^0xAA, FLAG};
-    writeBytesSerialPort(buf, 5);
 
     return 0;
 }

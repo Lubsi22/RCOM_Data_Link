@@ -5,6 +5,7 @@
 
 #include "string.h"
 #include <stdio.h>
+#include <unistd.h>
 
 void applicationLayer(const char *serialPort, const char *role, int baudRate,
                       int nTries, int timeout, const char *filename)
@@ -28,11 +29,13 @@ void applicationLayer(const char *serialPort, const char *role, int baudRate,
     llopen(serialport);
     
     if(lRole == LlTx){
-        llwrite("Hello World", 12);
+        sleep(1);
+        llwrite((const unsigned char *)"Hello World", 12);
     }
     else{
-        unsigned char *packet;
+        unsigned char packet[256];
         llread(packet);
+        printf("%s\n", packet);
     }
 
     llclose(serialport);

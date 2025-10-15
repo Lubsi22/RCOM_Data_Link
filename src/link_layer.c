@@ -231,11 +231,38 @@ int llwrite(const unsigned char *buf, int bufSize)
 // LLREAD
 ////////////////////////////////////////////////
 int llread(unsigned char *packet)
-{
-    while (readByteSerialPort(packet) == 1)
+{   
+    unsigned char byte;
+    int idx = 0;
+    int started = 0;
+
+    while (1)
     {
-        printf("%s \n", packet);
+        int result = readByteSerialPort(&byte);
+        
+        if (result == -1) {
+            return -1;
+        }
+        
+        if (result == 0) {
+            continue;
+        }
+        
+        if (!started) {
+            if (byte == FLAG) {
+                started = 1;
+            }
+        }
+        else {
+            if (byte == FLAG) {
+                return idx;
+            }
+            packet[idx++] = byte;
+        }
     }
+
+    unsigned char buf[5] = {FLAG, A_R, 0xAA, A_R^0xAA, FLAG};
+    writeBytesSerialPort(buf, 5);
 
     return 0;
 }

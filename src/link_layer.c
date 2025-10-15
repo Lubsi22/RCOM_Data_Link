@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <signal.h>
+#include <unistd.h>
 
 // Link layer protocol implementation
 
@@ -231,9 +232,9 @@ int llwrite(const unsigned char *buf, int bufSize)
 ////////////////////////////////////////////////
 int llread(unsigned char *packet)
 {
-    while (readByteSerialPort(&packet) == 1)
+    while (readByteSerialPort(packet) == 1)
     {
-        printf("%c \n", packet);
+        printf("%s \n", packet);
     }
 
     return 0;

@@ -63,7 +63,7 @@ int llopen(LinkLayer connectionParameters)
                 writeBytesSerialPort(buf, bufSize);
                 printf("Tx: Sent SET\n");
 
-                alarm(connectionParameters.timeout); // Set alarm to be triggered in 3s
+                alarm(connectionParameters.timeout);
                 alarmEnabled = TRUE;
             }
 
@@ -74,62 +74,43 @@ int llopen(LinkLayer connectionParameters)
                 switch (state)
                 {
                 case FLAG_I:
-                {
                     if (byte == FLAG)
-                    {
-                        printf("byte = 0x%02X\n", byte);
                         state = A;
-                    }
                     else
                         state = FLAG_I;
                     break;
-                }
-                case A:
-                {
-                    if (byte == A_R)
-                    {
-                        printf("byte = 0x%02X\n", byte);
-                        state = C;
-                    }
-                    else
-                        state = FLAG_I;
 
+                case A:
+                    if (byte == A_R)
+                        state = C;
+                    else
+                        state = FLAG_I;
                     break;
-                }
+
                 case C:
-                {
                     if (byte == UA)
-                    {
-                        printf("byte = 0x%02X\n", byte);
                         state = BCC;
-                    }
                     else
                         state = FLAG_I;
                     break;
-                }
+
                 case BCC:
-                {
                     if (byte == (A_R ^ UA))
-                    {
-                        printf("byte = 0x%02X\n", byte);
                         state = FLAG_F;
-                    }
                     else
                         state = FLAG_I;
                     break;
-                }
+
                 case FLAG_F:
-                {
                     if (byte == FLAG)
                     {
-                        printf("byte = 0x%02X\n", byte);
                         STOP = TRUE;
                         alarm(0);
                     }
                     else
                         state = FLAG_I;
                     break;
-                }
+
                 default:
                     break;
                 }
@@ -148,7 +129,6 @@ int llopen(LinkLayer connectionParameters)
         printf("Rx: Waiting for SET...\n");
         while (STOP == FALSE)
         {
-
             unsigned char byte;
             if (readByteSerialPort(&byte) != 1)
                 continue;
@@ -156,61 +136,40 @@ int llopen(LinkLayer connectionParameters)
             switch (state)
             {
             case FLAG_I:
-            {
                 if (byte == FLAG)
-                {
-                    printf("byte = 0x%02X\n", byte);
                     state = A;
-                }
                 else
                     state = FLAG_I;
+                break;
 
-                break;
-            }
             case A:
-            {
                 if (byte == A_T)
-                {
-                    printf("byte = 0x%02X\n", byte);
                     state = C;
-                }
                 else
                     state = FLAG_I;
                 break;
-            }
+
             case C:
-            {
                 if (byte == SET)
-                {
-                    printf("byte = 0x%02X\n", byte);
                     state = BCC;
-                }
                 else
                     state = FLAG_I;
                 break;
-            }
+
             case BCC:
-            {
                 if (byte == (A_T ^ SET))
-                {
-                    printf("byte = 0x%02X\n", byte);
                     state = FLAG_F;
-                }
                 else
                     state = FLAG_I;
                 break;
-            }
+
             case FLAG_F:
-            {
                 if (byte == FLAG)
-                {
-                    printf("byte = 0x%02X\n", byte);
                     STOP = TRUE;
-                }
                 else
                     state = FLAG_I;
                 break;
-            }
+
             default:
                 break;
             }
@@ -294,7 +253,7 @@ int llwrite(const unsigned char *buf, int bufSize, LinkLayer connectionParameter
         if (alarmEnabled == FALSE)
         {
             bytes = writeBytesSerialPort(stuffed, index);
-            printf("Tx: Sent Message\n");
+            printf("Tx: Sent I-frame\n");
 
             alarm(connectionParameters.timeout); 
             alarmEnabled = TRUE;
@@ -304,70 +263,49 @@ int llwrite(const unsigned char *buf, int bufSize, LinkLayer connectionParameter
         if(readByteSerialPort(&byte) != 1) continue;
 
         switch (state)
-                {
-                case FLAG_I:
-                {
-                    if (byte == FLAG)
-                    {   
-                        printf("Here\n");
-                        printf("byte = 0x%02X\n", byte);
-                        state = A;
-                    }
-                    else
-                        state = FLAG_I;
-                    break;
-                }
-                case A:
-                {
-                    if (byte == A_R)
-                    {
-                        printf("byte = 0x%02X\n", byte);
-                        state = C;
-                    }
-                    else
-                        state = FLAG_I;
+        {
+        case FLAG_I:
+            if (byte == FLAG)
+                state = A;
+            else
+                state = FLAG_I;
+            break;
 
-                    break;
-                }
-                case C:
-                {
-                    if (byte == 0xAA)
-                    {
-                        printf("byte = 0x%02X\n", byte);
-                        state = BCC;
-                    }
-                    else
-                        state = FLAG_I;
-                    break;
-                }
-                case BCC:
-                {
-                    if (byte == (A_R ^ 0xAA))
-                    {
-                        printf("byte = 0x%02X\n", byte);
-                        state = FLAG_F;
-                    }
-                    else
-                        state = FLAG_I;
-                    break;
-                }
-                case FLAG_F:
-                {
-                    if (byte == FLAG)
-                    {
-                        printf("byte = 0x%02X\n", byte);
-                        printf("Message sent succesfully!!!\n");
-                        STOP = TRUE;
-                        alarm(0);
-                    }
-                    else
-                        state = FLAG_I;
-                    break;
-                }
-                default:
-                    break;
-                }
+        case A:
+            if (byte == A_R)
+                state = C;
+            else
+                state = FLAG_I;
+            break;
 
+        case C:
+            if (byte == 0xAA)
+                state = BCC;
+            else
+                state = FLAG_I;
+            break;
+
+        case BCC:
+            if (byte == (A_R ^ 0xAA))
+                state = FLAG_F;
+            else
+                state = FLAG_I;
+            break;
+
+        case FLAG_F:
+            if (byte == FLAG)
+            {
+                printf("Tx: Received RR - message sent successfully\n");
+                STOP = TRUE;
+                alarm(0);
+            }
+            else
+                state = FLAG_I;
+            break;
+
+        default:
+            break;
+        }
     }
 
     return bytes;
@@ -382,6 +320,7 @@ int llread(unsigned char *packet)
     enum State state = FLAG_I;
     int idx = 0;
     int STOP = FALSE;
+    unsigned char bcc2_calc = 0;
 
     while (STOP == FALSE)
     {
@@ -395,7 +334,6 @@ int llread(unsigned char *packet)
                 if (byte == FLAG)
                 {
                     state = A;
-                    printf("byte = 0x%02X\n", byte);
                 }
                 break;
 
@@ -403,7 +341,6 @@ int llread(unsigned char *packet)
                 if (byte == A_T)
                 {
                     state = C;
-                    printf("byte = 0x%02X\n", byte);
                 }
                 else
                     state = FLAG_I;
@@ -413,7 +350,6 @@ int llread(unsigned char *packet)
                 if (byte == C_0)
                 {
                     state = BCC;
-                    printf("byte = 0x%02X\n", byte);
                 }
                 else
                     state = FLAG_I;
@@ -422,17 +358,69 @@ int llread(unsigned char *packet)
             case BCC:
                 if (byte == (A_T ^ C_0))
                 {
-                    state = FLAG_F;
-                    printf("byte = 0x%02X\n", byte);
+                    state = DATA;
+                    idx = 0;
+                    bcc2_calc = 0;
                 }
                 else
                     state = FLAG_I;
                 break;
 
+            case DATA:
+                if (byte == FLAG)
+                {
+                    if (idx > 0)
+                    {
+                        unsigned char bcc2_received = packet[idx - 1];
+                        unsigned char bcc2_check = 0;
+                        
+                        for (int i = 0; i < idx - 1; i++)
+                            bcc2_check ^= packet[i];
+                        
+                        if (bcc2_received == bcc2_check)
+                        {
+                            idx--;
+                            STOP = TRUE;
+                            
+                            unsigned char rr[5] = {FLAG, A_R, 0xAA, A_R ^ 0xAA, FLAG};
+                            writeBytesSerialPort(rr, 5);
+                            printf("Rx: Sent RR\n");
+                        }
+                        else
+                        {
+                            unsigned char rej[5] = {FLAG, A_R, 0x54, A_R ^ 0x54, FLAG};
+                            writeBytesSerialPort(rej, 5);
+                            printf("Rx: BCC2 error - Sent REJ\n");
+                            state = FLAG_I;
+                        }
+                    }
+                    else
+                    {
+                        state = FLAG_I;
+                    }
+                }
+                else
+                {
+                    if (byte == 0x7D)
+                    {
+                        while (readByteSerialPort(&byte) != 1);
+                        
+                        if (byte == 0x5E)
+                            byte = FLAG;
+                        else if (byte == 0x5D)
+                            byte = 0x7D;
+                    }
+                    
+                    packet[idx++] = byte;
+                    
+                    if (idx >= 4096)
+                        return -1;
+                }
+                break;
+
             case FLAG_F:
                 if (byte == FLAG)
                 {
-                    printf("Rx: Received DISC from Tx\n");
                     STOP = TRUE;
                 }
                 else
@@ -441,7 +429,7 @@ int llread(unsigned char *packet)
             }
     }
 
-    return 0;
+    return idx;
 }
 
 ////////////////////////////////////////////////
@@ -494,38 +482,26 @@ int llclose(LinkLayer connectionParameters)
                 {
                 case FLAG_I:
                     if (byte == FLAG)
-                    {
                         state = A;
-                        printf("byte = 0x%02X\n", byte);
-                    }
                     break;
 
                 case A:
                     if (byte == A_R)
-                    {
                         state = C;
-                        printf("byte = 0x%02X\n", byte);
-                    }
                     else
                         state = FLAG_I;
                     break;
 
                 case C:
                     if (byte == DISC)
-                    {
                         state = BCC;
-                        printf("byte = 0x%02X\n", byte);
-                    }
                     else if (byte != FLAG)
                         state = FLAG_I;
                     break;
 
                 case BCC:
                     if (byte == (A_R ^ DISC))
-                    {
                         state = FLAG_F;
-                        printf("byte = 0x%02X\n", byte);
-                    }
                     else
                         state = FLAG_I;
                     break;
@@ -533,7 +509,6 @@ int llclose(LinkLayer connectionParameters)
                 case FLAG_F:
                     if (byte == FLAG)
                     {
-                        printf("byte = 0x%02X\n", byte);
                         printf("Tx: Received DISC from Rx\n");
                         STOP = TRUE;
                         alarm(0);
@@ -545,11 +520,8 @@ int llclose(LinkLayer connectionParameters)
             }
         }
 
-        // Send UA
         if (!STOP)
-        {
             return -1;
-        }
 
         unsigned char ua[5] = {FLAG, A_T, UA, A_T ^ UA, FLAG};
         writeBytesSerialPort(ua, 5);
@@ -572,38 +544,26 @@ int llclose(LinkLayer connectionParameters)
             {
             case FLAG_I:
                 if (byte == FLAG)
-                {
                     state = A;
-                    printf("byte = 0x%02X\n", byte);
-                }
                 break;
 
             case A:
                 if (byte == A_T)
-                {
                     state = C;
-                    printf("byte = 0x%02X\n", byte);
-                }
                 else
                     state = FLAG_I;
                 break;
 
             case C:
                 if (byte == DISC)
-                {
                     state = BCC;
-                    printf("byte = 0x%02X\n", byte);
-                }
                 else
                     state = FLAG_I;
                 break;
 
             case BCC:
                 if (byte == (A_T ^ DISC))
-                {
                     state = FLAG_F;
-                    printf("byte = 0x%02X\n", byte);
-                }
                 else
                     state = FLAG_I;
                 break;
@@ -638,38 +598,26 @@ int llclose(LinkLayer connectionParameters)
             {
             case FLAG_I:
                 if (byte == FLAG)
-                {
                     state = A;
-                    printf("byte = 0x%02X\n", byte);
-                }
                 break;
 
             case A:
                 if (byte == A_T)
-                {
                     state = C;
-                    printf("byte = 0x%02X\n", byte);
-                }
                 else
                     state = FLAG_I;
                 break;
 
             case C:
                 if (byte == UA)
-                {
                     state = BCC;
-                    printf("byte = 0x%02X\n", byte);
-                }
                 else
                     state = FLAG_I;
                 break;
 
             case BCC:
                 if (byte == (A_T ^ UA))
-                {
                     state = FLAG_F;
-                    printf("byte = 0x%02X\n", byte);
-                }
                 else
                     state = FLAG_I;
                 break;
@@ -677,8 +625,7 @@ int llclose(LinkLayer connectionParameters)
             case FLAG_F:
                 if (byte == FLAG)
                 {
-                    printf("byte = 0x%02X\n", byte);
-                    printf("Rx: Received UA, closing link.\n");
+                    printf("Rx: Received UA, closing link\n");
                     STOP = TRUE;
                 }
                 else

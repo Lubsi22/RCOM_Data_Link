@@ -40,7 +40,7 @@ typedef struct
 #define C_1 0x80
 
 enum State{
-    FLAG_I, A, C, BCC, FLAG_F
+    FLAG_I, A, C, BCC, DATA, FLAG_F
 };
 // Open a connection using the "port" parameters defined in struct linkLayer.
 // Return 0 on success or -1 on error.

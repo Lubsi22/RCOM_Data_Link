@@ -29,13 +29,12 @@ void applicationLayer(const char *serialPort, const char *role, int baudRate,
     llopen(serialport);
     
     if(lRole == LlTx){
-        sleep(1);
         llwrite((const unsigned char *)"Hello World", 12, serialport);
     }
     else{
         unsigned char packet[256];
         llread(packet);
-        printf("%s\n", packet);
+        printf("Message: %s\n", packet);
     }
 
     llclose(serialport);

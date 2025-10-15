@@ -36,6 +36,9 @@ typedef struct
 #define UA 0x07
 #define DISC 0x0B
 
+#define C_0 0x00
+#define C_1 0x80
+
 enum State{
     FLAG_I, A, C, BCC, FLAG_F
 };
@@ -45,7 +48,7 @@ int llopen(LinkLayer connectionParameters);
 
 // Send data in buf with size bufSize.
 // Return number of chars written, or -1 on error.
-int llwrite(const unsigned char *buf, int bufSize);
+int llwrite(const unsigned char *buf, int bufSize, LinkLayer connectionParameters);
 
 // Receive data in packet.
 // Return number of chars read, or -1 on error.

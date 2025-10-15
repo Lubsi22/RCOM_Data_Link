@@ -59,7 +59,7 @@ int llopen(LinkLayer connectionParameters)
         {
             if (alarmEnabled == FALSE)
             {
-                int bytes = writeBytesSerialPort(buf, bufSize);
+                writeBytesSerialPort(buf, bufSize);
                 printf("Tx: Sent SET\n");
 
                 alarm(connectionParameters.timeout); // Set alarm to be triggered in 3s
@@ -105,7 +105,7 @@ int llopen(LinkLayer connectionParameters)
                 }
                 case BCC:
                 {
-                    if (byte == A_R ^ UA)
+                    if (byte == (A_R ^ UA))
                     {
                         printf("byte = 0x%02X\n", byte);
                         state = FLAG_F;
@@ -181,7 +181,7 @@ int llopen(LinkLayer connectionParameters)
             }
             case BCC:
             {
-                if (byte == A_T ^ SET)
+                if (byte == (A_T ^ SET))
                 {
                     printf("byte = 0x%02X\n", byte);
                     state = FLAG_F;

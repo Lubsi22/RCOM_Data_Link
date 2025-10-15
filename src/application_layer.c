@@ -28,7 +28,7 @@ void applicationLayer(const char *serialPort, const char *role, int baudRate,
     llopen(serialport);
     
     if(lRole == LlTx){
-        llwrite("Hello World", 12);
+        llwrite("Hello World", 12, serialport);
     }
     else{
         unsigned char *packet;

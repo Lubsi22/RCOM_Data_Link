@@ -379,34 +379,66 @@ int llwrite(const unsigned char *buf, int bufSize, LinkLayer connectionParameter
 int llread(unsigned char *packet)
 {   
     unsigned char byte;
+    enum State state = FLAG_I;
     int idx = 0;
-    int started = 0;
+    int STOP = FALSE;
 
-    while (1)
+    while (STOP == FALSE)
     {
-        int result = readByteSerialPort(&byte);
-        
-        if (result == -1) {
-            return -1;
-        }
-        
-        if (result == 0) {
-            continue;
-        }
-        
-        if (!started) {
-            if (byte == FLAG) {
-                started = 1;
+        unsigned char byte;
+            if (readByteSerialPort(&byte) != 1)
+                continue;
+
+            switch (state)
+            {
+            case FLAG_I:
+                if (byte == FLAG)
+                {
+                    state = A;
+                    printf("byte = 0x%02X\n", byte);
+                }
+                break;
+
+            case A:
+                if (byte == A_T)
+                {
+                    state = C;
+                    printf("byte = 0x%02X\n", byte);
+                }
+                else
+                    state = FLAG_I;
+                break;
+
+            case C:
+                if (byte == C_0)
+                {
+                    state = BCC;
+                    printf("byte = 0x%02X\n", byte);
+                }
+                else
+                    state = FLAG_I;
+                break;
+
+            case BCC:
+                if (byte == (A_T ^ C_0))
+                {
+                    state = FLAG_F;
+                    printf("byte = 0x%02X\n", byte);
+                }
+                else
+                    state = FLAG_I;
+                break;
+
+            case FLAG_F:
+                if (byte == FLAG)
+                {
+                    printf("Rx: Received DISC from Tx\n");
+                    STOP = TRUE;
+                }
+                else
+                    state = FLAG_I;
+                break;
             }
-        }
-        else {
-            if (byte == FLAG) {
-                unsigned char buf[5] = {FLAG, A_R, 0xAA, A_R^0xAA, FLAG};
-                writeBytesSerialPort(buf, 5);
-                return idx;
-            }
-            packet[idx++] = byte;
-        }
     }
 
     return 0;

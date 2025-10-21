@@ -35,6 +35,10 @@ typedef struct
 #define SET 0x03
 #define UA 0x07
 #define DISC 0x0B
+#define RR0 0xAA
+#define RR1 0xAB
+#define REJ0 0x54
+#define REJ1 0x55
 
 #define C_0 0x00
 #define C_1 0x80

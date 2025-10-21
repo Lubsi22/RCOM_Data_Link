@@ -279,7 +279,7 @@ int llwrite(const unsigned char *buf, int bufSize, LinkLayer connectionParameter
             break;
 
         case C:
-            if (byte == 0xAA)
+            if (byte == RR0)
                 state = BCC;
             else
                 state = FLAG_I;
@@ -382,13 +382,13 @@ int llread(unsigned char *packet)
                             idx--;
                             STOP = TRUE;
                             
-                            unsigned char rr[5] = {FLAG, A_R, 0xAA, A_R ^ 0xAA, FLAG};
+                            unsigned char rr[5] = {FLAG, A_R, RR0, A_R ^ RR0, FLAG};
                             writeBytesSerialPort(rr, 5);
                             printf("Rx: Sent RR\n");
                         }
                         else
                         {
-                            unsigned char rej[5] = {FLAG, A_R, 0x54, A_R ^ 0x54, FLAG};
+                            unsigned char rej[5] = {FLAG, A_R, REJ0, A_R ^ REJ0, FLAG};
                             writeBytesSerialPort(rej, 5);
                             printf("Rx: BCC2 error - Sent REJ\n");
                             state = FLAG_I;
@@ -413,21 +413,12 @@ int llread(unsigned char *packet)
                     
                     packet[idx++] = byte;
                     
-                    if (idx >= 4096)
-                        return -1;
                 }
                 break;
 
-            case FLAG_F:
-                if (byte == FLAG)
-                {
-                    STOP = TRUE;
-                }
-                else
-                    state = FLAG_I;
-                break;
             }
     }
+
 
     return idx;
 }

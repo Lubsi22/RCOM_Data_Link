@@ -1,6 +1,12 @@
 {
     "files.associations": {
+        "*.embeddedhtml": "html",
         "termios.h": "c",
-        "stat.h": "c"
+        "stat.h": "c",
+        "unistd.h": "c",
+        "application_layer.h": "c",
+        "link_layer.h": "c",
+        "string.h": "c",
+        "stdio.h": "c"
     }
 }

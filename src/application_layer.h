@@ -4,6 +4,18 @@
 #ifndef _APPLICATION_LAYER_H_
 #define _APPLICATION_LAYER_H_
 
+#include "link_layer.h"
+#include "string.h"
+#include <stdio.h>
+#include <unistd.h>
+
+#define BUFSIZE 256
+
+#define START_CONTROL 0x01
+#define DATA_CONTROL 0x02
+#define END_CONTROL 0x03
+
+enum receiver{START_TRANSACTION, DATA_TRANSACTION, END_TRANSACTION};
 // Application layer main function.
 // Arguments:
 //   serialPort: Serial port name (e.g., /dev/ttyS0).
@@ -14,5 +26,11 @@
 //   filename: Name of the file to send / receive.
 void applicationLayer(const char *serialPort, const char *role, int baudRate,
                       int nTries, int timeout, const char *filename);
+
+void ControlPacket(const char *filename, int cValue, FILE* file, LinkLayer serialport);
+
+void DataPacket(FILE* file, LinkLayer serialport);
+
+LinkLayer CreateLinkLayer(const char *serialPort, const char *role, int baudRate, int nTries, int timeout, LinkLayerRole lRole);
 
 #endif // _APPLICATION_LAYER_H_

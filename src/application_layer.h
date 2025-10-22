@@ -4,6 +4,12 @@
 #ifndef _APPLICATION_LAYER_H_
 #define _APPLICATION_LAYER_H_
 
+
+#define BUFSIZE 256
+
+#define START 0x01
+#define DATA 0x02
+#define END 3
 // Application layer main function.
 // Arguments:
 //   serialPort: Serial port name (e.g., /dev/ttyS0).

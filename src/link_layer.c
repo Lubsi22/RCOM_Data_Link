@@ -286,7 +286,7 @@ int llwrite(const unsigned char *buf, int bufSize, LinkLayer connectionParameter
             break;
 
         case BCC:
-            if (byte == (A_R ^ 0xAA))
+            if (byte == (A_R ^ RR0))
                 state = FLAG_F;
             else
                 state = FLAG_I;

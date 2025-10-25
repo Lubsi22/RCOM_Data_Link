@@ -189,8 +189,9 @@ int llopen(LinkLayer connectionParameters)
 // LLWRITE
 ////////////////////////////////////////////////
 int llwrite(const unsigned char *buf, int bufSize, LinkLayer connectionParameters)
-{
-    int size = 2 * bufSize + 4;
+{   
+    static int Number = 0;
+    int size = 2 * bufSize + 7;
     unsigned char stuffed[size];
 
     unsigned char bcc2 = 0x00;
@@ -198,8 +199,9 @@ int llwrite(const unsigned char *buf, int bufSize, LinkLayer connectionParameter
 
     stuffed[index++] = FLAG;
     stuffed[index++] = A_T;
-    stuffed[index++] = C_0;
-    stuffed[index++] = (A_T ^ C_0);
+    unsigned char control = (Number == 0 ? C_0 : C_1);
+    stuffed[index++] = control;
+    stuffed[index++] = (A_T ^ control );
 
     for (int i = 0; i < bufSize; i++)
     {
@@ -251,8 +253,9 @@ int llwrite(const unsigned char *buf, int bufSize, LinkLayer connectionParameter
     while (STOP == FALSE && alarmCount < connectionParameters.nRetransmissions)
     {
         if (alarmEnabled == FALSE)
-        {
-            bytes = writeBytesSerialPort(stuffed, index);
+        {   
+            bytes = 0;
+            bytes += writeBytesSerialPort(stuffed, index);
             printf("Tx: Sent I-frame\n");
 
             alarm(connectionParameters.timeout); 
@@ -279,14 +282,20 @@ int llwrite(const unsigned char *buf, int bufSize, LinkLayer connectionParameter
             break;
 
         case C:
-            if (byte == RR0)
+            if ((byte == RR0 && Number == 1) || (byte == RR1 && Number == 0))
                 state = BCC;
+            else if (byte == REJ0 || byte == REJ1){
+                printf("Tx: Resending Frame\n");
+                alarmEnabled = FALSE;
+                state = FLAG_I;
+            }
             else
                 state = FLAG_I;
+
             break;
 
         case BCC:
-            if (byte == (A_R ^ RR0))
+            if (byte == (A_R ^ (Number == 0 ? RR1 : RR0)))
                 state = FLAG_F;
             else
                 state = FLAG_I;
@@ -294,7 +303,12 @@ int llwrite(const unsigned char *buf, int bufSize, LinkLayer connectionParameter
 
         case FLAG_F:
             if (byte == FLAG)
-            {
+            {   
+                if(Number == 0){
+                    Number = 1;
+                }else if(Number == 1){
+                    Number = 0;
+                }
                 printf("Tx: Received RR - message sent successfully\n");
                 STOP = TRUE;
                 alarm(0);
@@ -308,6 +322,7 @@ int llwrite(const unsigned char *buf, int bufSize, LinkLayer connectionParameter
         }
     }
 
+    printf("Tx: Bytes Written %d\n", bytes);
     return bytes;
 }
 
@@ -316,15 +331,18 @@ int llwrite(const unsigned char *buf, int bufSize, LinkLayer connectionParameter
 ////////////////////////////////////////////////
 int llread(unsigned char *packet)
 {   
-    unsigned char byte;
     enum State state = FLAG_I;
     int idx = 0;
     int STOP = FALSE;
     unsigned char bcc2_calc = 0;
 
+    unsigned char frameNumber;
+    unsigned char rejNumber;
+    unsigned char byteC;
+
     while (STOP == FALSE)
     {
-        unsigned char byte;
+            unsigned char byte;
             if (readByteSerialPort(&byte) != 1)
                 continue;
 
@@ -347,16 +365,19 @@ int llread(unsigned char *packet)
                 break;
 
             case C:
-                if (byte == C_0)
+                if (byte == C_0 || byte == C_1)
                 {
-                    state = BCC;
+                    byteC = byte; 
+                    frameNumber = (byteC == C_0) ? RR1 : RR0; 
+                    rejNumber = (byteC == C_0) ? REJ0 : REJ1; 
+                    state = BCC; 
                 }
                 else
                     state = FLAG_I;
                 break;
 
             case BCC:
-                if (byte == (A_T ^ C_0))
+                if (byte == (A_T ^ byteC))
                 {
                     state = DATA;
                     idx = 0;
@@ -382,13 +403,13 @@ int llread(unsigned char *packet)
                             idx--;
                             STOP = TRUE;
                             
-                            unsigned char rr[5] = {FLAG, A_R, RR0, A_R ^ RR0, FLAG};
+                            unsigned char rr[5] = {FLAG, A_R, frameNumber, A_R ^ frameNumber, FLAG};
                             writeBytesSerialPort(rr, 5);
                             printf("Rx: Sent RR\n");
                         }
                         else
                         {
-                            unsigned char rej[5] = {FLAG, A_R, REJ0, A_R ^ REJ0, FLAG};
+                            unsigned char rej[5] = {FLAG, A_R, rejNumber, A_R ^ rejNumber, FLAG};
                             writeBytesSerialPort(rej, 5);
                             printf("Rx: BCC2 error - Sent REJ\n");
                             state = FLAG_I;
@@ -514,7 +535,7 @@ int llclose(LinkLayer connectionParameters)
         if (!STOP)
             return -1;
 
-        unsigned char ua[5] = {FLAG, A_T, UA, A_T ^ UA, FLAG};
+        unsigned char ua[5] = {FLAG, A_R, UA, A_R ^ UA, FLAG};
         writeBytesSerialPort(ua, 5);
         printf("Tx: Sent UA, closing link.\n");
     }
@@ -593,7 +614,7 @@ int llclose(LinkLayer connectionParameters)
                 break;
 
             case A:
-                if (byte == A_T)
+                if (byte == A_R)
                     state = C;
                 else
                     state = FLAG_I;
@@ -607,7 +628,7 @@ int llclose(LinkLayer connectionParameters)
                 break;
 
             case BCC:
-                if (byte == (A_T ^ UA))
+                if (byte == (A_R ^ UA))
                     state = FLAG_F;
                 else
                     state = FLAG_I;
@@ -632,7 +653,6 @@ int llclose(LinkLayer connectionParameters)
         exit(-1);
     }
 
-    printf("Serial port closed successfully\n");
 
     return 0;
 }

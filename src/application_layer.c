@@ -19,7 +19,9 @@ void applicationLayer(const char *serialPort, const char *role, int baudRate,
     LinkLayer serialport = CreateLinkLayer(serialPort, role, baudRate, nTries, timeout, lRole);
 
 
-    llopen(serialport);
+    if(llopen(serialport) < 0){
+        printf("Application failed to open Serial Port \n");
+    }
     
     if(lRole == LlTx){
 
@@ -28,13 +30,29 @@ void applicationLayer(const char *serialPort, const char *role, int baudRate,
             printf("The file is not opened.");
         }   
 
-        ControlPacket(filename, START_CONTROL, file, serialport);
+        if(ControlPacket(filename, START_CONTROL, file, serialport) < 0){
+            printf("Application failed to send START Packet \n");
+            fclose(file);
+            llclose(serialport);
+            return;
+        }
 
-        DataPacket(file, serialport);
+        if(DataPacket(file, serialport) < 0){
+            printf("Application failed to send DATA Packet \n");
+            fclose(file);
+            llclose(serialport);
+            return;
+        }
 
-        ControlPacket(filename, END_CONTROL, file, serialport);
+        if(ControlPacket(filename, END_CONTROL, file, serialport) < 0){
+            printf("Application failed to send START Packet \n");
+            fclose(file);
+            llclose(serialport);
+            return;
+        }
 
         fclose(file);
+        printf("Application Sent Data succefully \n");
         
     }
     else{
@@ -100,12 +118,16 @@ void applicationLayer(const char *serialPort, const char *role, int baudRate,
     }
     
 
-    llclose(serialport);
+    if(llclose(serialport) < 0 ){
+        printf("Serial Port closed with errors \n");
+    }else{
+        printf("Serial Port closed successfully\n");
+    }
     
     }
 
 
-void ControlPacket(const char *filename, int cValue, FILE* file, LinkLayer serialport){
+int ControlPacket(const char *filename, int cValue, FILE* file, LinkLayer serialport){
     fseek(file, 0, SEEK_END);
     int file_size = ftell(file);
         
@@ -125,11 +147,15 @@ void ControlPacket(const char *filename, int cValue, FILE* file, LinkLayer seria
     memcpy(control_packet+offset, filename, filename_len);
     offset += strlen(filename);
 
-    llwrite(control_packet, offset, serialport);
+    if(llwrite(control_packet, offset, serialport) < 0){
+        printf("Application Transmission Failed after all Retransmissions\n");
+        return -1;
+    }
 
+    return 0;
 }
 
-void DataPacket(FILE* file, LinkLayer serialport){
+int DataPacket(FILE* file, LinkLayer serialport){
     unsigned char data_packet[3 + BUFSIZE];
         size_t bytesRead;
 
@@ -138,8 +164,13 @@ void DataPacket(FILE* file, LinkLayer serialport){
             data_packet[1] = (bytesRead >> 8) & 0xFF;
             data_packet[2] = bytesRead & 0xFF;
 
-            llwrite(data_packet, bytesRead + 3, serialport);
+            if(llwrite(data_packet, bytesRead + 3, serialport) < 0){
+                printf("Application Transmission Failed after all Retransmissions\n");
+                return -1;
+            }
+
         }
+        return 0;
 }
 
 LinkLayer CreateLinkLayer(const char *serialPort, const char *role, int baudRate, int nTries, int timeout, LinkLayerRole lRole){

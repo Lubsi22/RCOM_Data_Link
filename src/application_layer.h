@@ -27,9 +27,9 @@ enum receiver{START_TRANSACTION, DATA_TRANSACTION, END_TRANSACTION};
 void applicationLayer(const char *serialPort, const char *role, int baudRate,
                       int nTries, int timeout, const char *filename);
 
-void ControlPacket(const char *filename, int cValue, FILE* file, LinkLayer serialport);
+int ControlPacket(const char *filename, int cValue, FILE* file, LinkLayer serialport);
 
-void DataPacket(FILE* file, LinkLayer serialport);
+int DataPacket(FILE* file, LinkLayer serialport);
 
 LinkLayer CreateLinkLayer(const char *serialPort, const char *role, int baudRate, int nTries, int timeout, LinkLayerRole lRole);
 

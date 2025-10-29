@@ -21,6 +21,8 @@ void applicationLayer(const char *serialPort, const char *role, int baudRate,
 
     if(llopen(serialport) < 0){
         printf("Application failed to open Serial Port \n");
+        llend();
+        return;
     }
     
     if(lRole == LlTx){

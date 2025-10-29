@@ -43,8 +43,14 @@ typedef struct
 #define C_0 0x00
 #define C_1 0x80
 
-enum State{
-    FLAG_I, A, C, BCC, DATA, FLAG_F
+enum State
+{
+    FLAG_I,
+    A,
+    C,
+    BCC,
+    DATA,
+    FLAG_F
 };
 // Open a connection using the "port" parameters defined in struct linkLayer.
 // Return 0 on success or -1 on error.
@@ -61,5 +67,7 @@ int llread(unsigned char *packet);
 // Close previously opened connection and print transmission statistics in the console.
 // Return 0 on success or -1 on error.
 int llclose(LinkLayer connectionParameters);
+
+int llend();
 
 #endif // _LINK_LAYER_H_

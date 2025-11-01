@@ -5,9 +5,12 @@
 #define _APPLICATION_LAYER_H_
 
 #include "link_layer.h"
-#include "string.h"
+#define _XOPEN_SOURCE 600
+#include <time.h>
+#include <string.h>
 #include <stdio.h>
 #include <unistd.h>
+
 
 #define BUFSIZE 256
 

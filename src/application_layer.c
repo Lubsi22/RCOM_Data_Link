@@ -2,9 +2,12 @@
 
 #include "application_layer.h"
 
-#include "string.h"
-#include <stdio.h>
-#include <unistd.h>
+static struct timespec t_start, t_end;
+static unsigned int bytes_app_rx = 0;
+
+static double timeTransfer(struct timespec a, struct timespec b){
+  return (b.tv_sec - a.tv_sec) + (b.tv_nsec - a.tv_nsec)/1e9;
+}
 
 void applicationLayer(const char *serialPort, const char *role, int baudRate,
                       int nTries, int timeout, const char *filename)
@@ -25,6 +28,9 @@ void applicationLayer(const char *serialPort, const char *role, int baudRate,
         llend();
         return;
     }
+
+    clock_gettime(CLOCK_MONOTONIC, &t_start);
+    bytes_app_rx = 0;
 
     if (lRole == LlTx)
     {
@@ -130,7 +136,8 @@ void applicationLayer(const char *serialPort, const char *role, int baudRate,
                 if (packet[0] == DATA_CONTROL)
                 {
                     int data_length = (packet[1] << 8) | packet[2];
-                    fwrite(packet + 3, 1, data_length, file);
+                    size_t wrote = fwrite(packet + 3, 1, data_length, file);
+                    bytes_app_rx += wrote;
                 }
                 else if (packet[0] == END_CONTROL)
                 {
@@ -149,9 +156,21 @@ void applicationLayer(const char *serialPort, const char *role, int baudRate,
         printf("Serial Port closed with errors \n");
     }
     else
-    {
+    {   
         printf("Serial Port closed successfully\n");
     }
+
+    clock_gettime(CLOCK_MONOTONIC, &t_end);
+
+    if(lRole == LlRx){
+        double dt = timeTransfer(t_start, t_end);
+        double R = dt > 0 ? (8.0*bytes_app_rx)/ dt : 0.0;
+        double C = (double) baudRate;
+        double S = R/C;
+        printf("Bytes = %u, Time: %.3f, R = %.3f, C = %.3f, S = %.3f\n", bytes_app_rx, dt, R, C, S);
+    }
+
+
 }
 
 // Auxiliar fuction to Create the Control Packets and send them

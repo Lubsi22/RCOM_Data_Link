@@ -283,8 +283,9 @@ int llwrite(const unsigned char *buf, int bufSize, LinkLayer connectionParameter
     // Variables reset of the alarm
     alarmCount = 0;
     alarmEnabled = FALSE;
+    int rejRetries = 0;
 
-    while (STOP == FALSE && alarmCount < connectionParameters.nRetransmissions)
+    while (STOP == FALSE && (alarmCount + rejRetries) < connectionParameters.nRetransmissions)
     {
 
         // Alarm to send the first time the buffer or in case of a timeout or REJ to send agian the Data
@@ -331,6 +332,7 @@ int llwrite(const unsigned char *buf, int bufSize, LinkLayer connectionParameter
             {
                 printf("Tx: Resending Frame\n");
                 alarm(0);
+                rejRetries++;
                 alarmEnabled = FALSE;
                 state = FLAG_I;
             }
@@ -477,12 +479,12 @@ int llread(unsigned char *packet)
                         if (bcc2_received == bcc2_check)
                         {
                             idx--;
-                            STOP = TRUE;
 
                             unsigned char rr[5] = {FLAG, A_R, frameNumber, A_R ^ frameNumber, FLAG};
                             writeBytesSerialPort(rr, 5);
                             printf("Rx: Sent RR\n");
                             expectedNs ^= 1;
+                            return idx;
                         }
                         else
                         {
@@ -504,8 +506,7 @@ int llread(unsigned char *packet)
                 // Destuffing the Data and putting it in the buffer packet
                 if (byte == 0x7D)
                 {
-                    while (readByteSerialPort(&byte) != 1)
-                        ;
+                    while (readByteSerialPort(&byte) != 1);
 
                     if (byte == 0x5E)
                         byte = FLAG;
@@ -519,7 +520,7 @@ int llread(unsigned char *packet)
         }
     }
 
-    return idx;
+    return -1;
 }
 
 ////////////////////////////////////////////////
